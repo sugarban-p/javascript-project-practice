@@ -157,6 +157,7 @@
 
 		// 1. 取得 DOM 元素
 		const loginBtn = document.getElementById("loginBtn"); // 登入按鈕
+		const loginBtnText = loginBtn.innerText; // 登入按鈕預設文字
 		const loginUserId = document.getElementById("loginUserId"); // ID欄
 		const loginEmail = document.getElementById("loginEmail"); // 帳號/信箱欄
 		const loginPassword = document.getElementById("loginPassword"); // 密碼欄
@@ -193,16 +194,26 @@
 				return;
 			}
 
+			// 在驗證使用者期間，鎖定登入按鈕 (登入 -> 登入中...)
+			loginBtn.disabled = true;
+			loginBtn.innerText = "登入中...";
 			// 帳密是否存在
 			setTimeout(
 				function() {
 					const isUserValid = validateLogin(userId, userPwd);
 					if (!isUserValid) {
 						alert("使用者ID或密碼有誤");
+						loginBtn.disabled = false;
+						loginBtn.innerText = loginBtnText;
 						loginPassword.focus();
 						return;
 					}
-					alert("登入成功");
+					// 3-1. sessionStorage 狀態管理
+					sessionStorage.setItem("userId",userId);
+					sessionStorage.setItem("userEmail",userEmail);
+					sessionStorage.setItem("isLoggedIn",true);
+					// 導向首頁
+					// alert("登入成功");
 					location.href = "home.html";
 				},
 				1000);
@@ -210,6 +221,14 @@
 		};
 		loginBtn.addEventListener("click",checkLogin)
 
+		// 3-2. 自動填寫 ID & 帳號
+		const currentUserId = sessionStorage.getItem("userId");
+		const currentUserEmail = sessionStorage.getItem("userEmail");
+		if (currentUserId) {
+			loginUserId.value = currentUserId;
+			loginEmail.value = currentUserEmail;
+		}
+		
 		// 我寫的
 
 		// 內建
