@@ -30,8 +30,10 @@ function loadSwipeHistory() {
         let userIdList = [];
         let userActionList = [];
         for (let user of users) {
-            userActionList.push(user.action);
-            userIdList.push(user.userId);
+            if (user.action!=='reject') {
+                userActionList.push(user.action);
+                userIdList.push(user.userId);
+            }
         }
         try {
             swipeHistory = JSON.parse(stored);
@@ -42,6 +44,7 @@ function loadSwipeHistory() {
         }
         return [userIdList,userActionList];
     }
+    return ["",""];
 }
 
 
@@ -49,29 +52,31 @@ function loadSwipeHistory() {
 function initSwipeDetection() {
     // 使用 MutationObserver 監聽卡片狀態變化
     const observer = new MutationObserver(function (mutations) {
-        mutations.forEach(function (mutation) {
-            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-                // 載入歷史記錄
-                const [userIdList,] = loadSwipeHistory();
-                const card = mutation.target;
-                const classList = card.classList;
+        const mutation = mutations[0];
+        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+            // 載入歷史記錄
+            const [userIdList,userActionList] = loadSwipeHistory();
+            const card = mutation.target;
+            const classList = card.classList;
 
-                // 檢查是否有用戶資料
-                const userId = card.dataset.userId;
-                const userName = card.dataset.userName;
-                // 避免重複回傳
-                if (userId && userName && !userIdList.includes(userId)) {
-                    // 檢測滑動方向
-                    if (classList.contains('to-right')) {
-                        recordSwipe(userId, userName, 'like');
-                    } else if (classList.contains('to-left')) {
-                        recordSwipe(userId, userName, 'reject');
-                    } else if (classList.contains('to-upside')) {
-                        recordSwipe(userId, userName, 'superlike');
-                    }
+            // 檢查是否有用戶資料
+            const userId = card.dataset.userId;
+            const userName = card.dataset.userName;
+            const userIndex = userIdList.indexOf(userId);
+
+            // 避免重複回傳
+            if (userId && userName && 
+                (!userIdList.includes(userId) || userActionList[userIndex]==="reject")) {
+                // 檢測滑動方向
+                if (classList.contains('to-right')) {
+                    recordSwipe(userId, userName, 'like');
+                } else if (classList.contains('to-left')) {
+                    recordSwipe(userId, userName, 'reject');
+                } else if (classList.contains('to-upside')) {
+                    recordSwipe(userId, userName, 'superlike');
                 }
             }
-        });
+        }
     });
 
     // 監聽所有卡片
